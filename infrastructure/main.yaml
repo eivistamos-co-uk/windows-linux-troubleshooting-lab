@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  The main stack for orchestrating AWS networking components for Windows server troubleshooting practice.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: windows-sysadmin-lab
+  Region:
+    Type: String
+    Default: eu-west-2
+  AvailabilityZone:
+    Type: String
+    Default: eu-west-2a
+
+Resources:
+
+  VirtualPrivateCloud:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/28
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-vpc"
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VirtualPrivateCloud
+      AvailabilityZone: !Ref AvailabilityZone
+      CidrBlock: 10.0.0.0/28
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-subnet-${AvailabilityZone}"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags: 
+        - Key: Name
+          Value: !Sub "${ProjectName}-igw"
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VirtualPrivateCloud
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags: 
+        - Key: Name
+          Value: !Sub "${ProjectName}-vpc-rtb-public"
+      VpcId: !Ref VirtualPrivateCloud
+
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref PublicSubnet
+
+  #------------------
+  # Work on tomorrow:
+  # - Security Group
+  # -- Security Group Ingress
+  # - Windows Instance
+  #------------------
+
+Outputs:
+  VPCId:
+    Description: Deployed VPC ID
+    Value: !Ref VirtualPrivateCloud
+  PublicSubnetId:
+    Description: Deployed public subnet ID
+    Value: !Ref PublicSubnet
