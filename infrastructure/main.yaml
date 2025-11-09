@@ -1,24 +1,24 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  The main stack for orchestrating AWS networking components for Windows server troubleshooting practice.
+  The main stack for orchestrating AWS networking components for Linux server troubleshooting practice.
 
 Parameters:
   ProjectName:
     Type: String
-    Default: windows-sysadmin-lab
+    Default: linux-sysadmin-lab
   AvailabilityZone:
     Type: String
     Default: eu-west-2a
   ServerOS:
     Type: String
-    Default: windows-server
+    Default: linux-server
   PersonalIPAddress:
     Description: Find on whatsmyip.com (append /32 for single IP)
     Type: String
   ImageID:
     Type: AWS::EC2::Image::Id
-    Description: Default here is Windows Server 2025
-    Default: ami-00cd9941a573abb98
+    Description: Default here is Amazon Linux 2023 6.1
+    Default: ami-075599e9cc6e3190d
   KeyPairName:
     Description: Create Key Pair before deployment and specify here
     Type: AWS::EC2::KeyPair::KeyName
@@ -98,10 +98,10 @@ Resources:
       VpcId: !Ref VirtualPrivateCloud
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 3389
-          ToPort: 3389
+          FromPort: 22
+          ToPort: 22
           CidrIp: !Ref PersonalIPAddress
-          Description: RDP access via personal laptop
+          Description: SSH access via personal laptop
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
@@ -112,21 +112,21 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref ImageID
-      InstanceType: t3.small
+      InstanceType: t2.micro
       KeyName: !Ref KeyPairName
       SubnetId: !Ref PublicSubnet
       SecurityGroupIds:
         - !Ref SecurityGroup
       BlockDeviceMappings:
-        - DeviceName: /dev/sda1
+        - DeviceName: /dev/xvda
           Ebs:
             Encrypted: false
             DeleteOnTermination: true
             Iops: 3000
-            VolumeSize: 30
+            VolumeSize: 8
             VolumeType: gp3
       CreditSpecification:
-        CPUCredits: unlimited
+        CPUCredits: standard
       MetadataOptions:
         HttpEndpoint: enabled
         HttpPutResponseHopLimit: 2
